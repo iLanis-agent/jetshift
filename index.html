@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JetShift - jet lag shift planner</title>
+<style>
+  :root { --bg:#0c1416; --card:#132024; --line:#1e3237; --ink:#e8f4f2; --dim:#8fb3ad; --teal:#5eead4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:56px 20px 64px; }
+  h1 { font-size:44px; margin:0 0 10px; letter-spacing:-0.5px; }
+  h1 span { color:var(--teal); }
+  .tag { color:var(--dim); font-size:18px; max-width:560px; margin:0 0 28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin:0 0 18px; }
+  .card h2 { margin:0 0 8px; font-size:20px; }
+  .card p { margin:0; color:var(--dim); }
+  a.cta { display:inline-block; margin-top:26px; background:var(--teal); color:#06231e; font-weight:700; text-decoration:none; padding:14px 28px; border-radius:12px; font-size:17px; }
+  .foot { color:var(--dim); font-size:13px; margin-top:34px; }
+  .foot a { color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Jet<span>Shift</span></h1>
+  <p class="tag">Jet lag is a scheduling problem. Your body clock moves about an hour a day - JetShift plans the move: earlier or later bedtimes before you fly, light exposure after you land, day by day.</p>
+  <div class="card">
+    <h2>Shift the right direction</h2>
+    <p>Enter your route and usual sleep times. The engine picks the shorter direction - sometimes delaying 11 hours beats advancing 13.</p>
+  </div>
+  <div class="card">
+    <h2>Start before you fly</h2>
+    <p>Up to five pre-departure days shift your wake and bed times an hour at a time, so you land partway adjusted.</p>
+  </div>
+  <div class="card">
+    <h2>Light is the lever</h2>
+    <p>Every plan day tells you when to seek bright light and when to avoid it - the strongest signal your body clock listens to.</p>
+  </div>
+  <a class="cta" href="app.html">Open JetShift</a>
+  <p class="foot">Runs entirely in your browser. <a href="https://github.com/iLanis-agent/jetshift">Source on GitHub</a></p>
+</div>
+</body>
+</html>

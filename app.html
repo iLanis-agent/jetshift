@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JetShift - app</title>
+<style>
+  :root { --bg:#0c1416; --card:#132024; --card2:#0f1a1d; --line:#1e3237; --ink:#e8f4f2; --dim:#8fb3ad; --teal:#5eead4; --amber:#fbbf24; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 20px 64px; }
+  header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
+  header h1 { font-size:26px; margin:0; }
+  header h1 span { color:var(--teal); }
+  header a { color:var(--dim); text-decoration:none; font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; margin:0 0 18px; }
+  .card h2 { margin:0 0 14px; font-size:18px; }
+  label { display:block; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin:0 0 6px; }
+  input, select { width:100%; background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px 12px; font-size:16px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  button { background:var(--teal); color:#06231e; border:0; font-weight:700; border-radius:10px; padding:11px 22px; font-size:16px; cursor:pointer; }
+  .hint { color:var(--dim); font-size:14px; margin-top:10px; }
+  .summary { background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px; color:var(--teal); font-weight:600; }
+  .day { border-top:1px solid var(--line); padding:12px 4px; }
+  .day b { color:var(--ink); }
+  .day .times { color:var(--teal); font-variant-numeric:tabular-nums; }
+  .day .light { color:var(--dim); font-size:14px; margin-top:4px; }
+  .rules { color:var(--amber); font-size:14px; margin-top:12px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Jet<span>Shift</span></h1>
+    <a href="index.html">&larr; Home</a>
+  </header>
+
+  <div class="card">
+    <h2>Your trip</h2>
+    <div class="row">
+      <div><label for="f-from">Flying from</label><select id="f-from"></select></div>
+      <div><label for="f-to">Flying to</label><select id="f-to"></select></div>
+    </div>
+    <div class="row">
+      <div><label for="f-wake">Usual wake time</label><input id="f-wake" type="time" value="07:00"></div>
+      <div><label for="f-bed">Usual bedtime</label><input id="f-bed" type="time" value="23:00"></div>
+    </div>
+    <div class="row">
+      <div><label for="f-days">Days until departure (0-5)</label><input id="f-days" type="number" min="0" max="5" value="3"></div>
+    </div>
+    <button id="f-build">Build my shift plan</button>
+    <p class="hint">About one hour of shift per day is the pace most body clocks can hold.</p>
+  </div>
+
+  <div class="card hidden" id="plancard">
+    <h2>Your plan</h2>
+    <div class="summary" id="summary"></div>
+    <div id="days"></div>
+    <p class="rules" id="rules"></p>
+  </div>
+</div>
+<script src="engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'jetshift-plan';
+  var $ = function (id) { return document.getElementById(id); };
+  var ZONES = ['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Anchorage','Pacific/Honolulu','America/Toronto','America/Vancouver','America/Mexico_City','America/Sao_Paulo','Europe/London','Europe/Dublin','Europe/Paris','Europe/Berlin','Europe/Madrid','Europe/Rome','Europe/Amsterdam','Europe/Zurich','Europe/Stockholm','Europe/Athens','Europe/Istanbul','Europe/Moscow','Africa/Cairo','Africa/Johannesburg','Asia/Jerusalem','Asia/Dubai','Asia/Karachi','Asia/Kolkata','Asia/Bangkok','Asia/Singapore','Asia/Hong_Kong','Asia/Shanghai','Asia/Tokyo','Asia/Seoul','Australia/Sydney','Australia/Perth','Pacific/Auckland','UTC'];
+  function fill(id, def) {
+    var sel = $(id);
+    ZONES.forEach(function (z) {
+      var o = document.createElement('option');
+      o.value = z; o.textContent = z.replace(/_/g, ' ');
+      sel.appendChild(o);
+    });
+    sel.value = def;
+  }
+  fill('f-from', 'America/Los_Angeles');
+  fill('f-to', 'Asia/Tokyo');
+
+  function toMin(t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); }
+
+  function render(plan, from, to) {
+    $('plancard').classList.remove('hidden');
+    var dirTxt = plan.direction === 'advance' ? 'advance (go earlier)' : 'delay (go later)';
+    $('summary').textContent = plan.direction === 'none'
+      ? 'Same zone - no shift needed.'
+      : 'Body clock needs to ' + dirTxt + ' by ' + Math.round(plan.totalMin / 60 * 10) / 10 + ' hours over ' + plan.daysTotal + ' day' + (plan.daysTotal > 1 ? 's' : '') + '.';
+    var box = $('days'); box.innerHTML = '';
+    plan.pre.concat(plan.post).forEach(function (d) {
+      var div = document.createElement('div');
+      div.className = 'day';
+      var b = document.createElement('b'); b.textContent = d.when;
+      var t = document.createElement('div'); t.className = 'times';
+      t.textContent = 'Wake ' + JetEngine.fmt(d.wake) + ' - bed ' + JetEngine.fmt(d.bed);
+      var l = document.createElement('div'); l.className = 'light';
+      l.textContent = 'Seek ' + d.light.seek + '. Avoid ' + d.light.avoid + '.';
+      div.appendChild(b); div.appendChild(t); div.appendChild(l); box.appendChild(div);
+    });
+    $('rules').textContent = plan.direction === 'none' ? ''
+      : 'Last caffeine by ' + JetEngine.fmt(plan.caffeineCutoff) + '. ' + plan.napRule + '.';
+  }
+
+  function build() {
+    var from = $('f-from').value, to = $('f-to').value;
+    var shift = JetEngine.shiftMinutes(from, to, new Date());
+    var plan = JetEngine.buildPlan(shift, toMin($('f-wake').value || '07:00'), toMin($('f-bed').value || '23:00'), +$('f-days').value || 0);
+    localStorage.setItem(KEY, JSON.stringify({ from: from, to: to, wake: $('f-wake').value, bed: $('f-bed').value, days: $('f-days').value }));
+    render(plan, from, to);
+  }
+
+  $('f-build').addEventListener('click', build);
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY));
+    if (saved) {
+      $('f-from').value = saved.from; $('f-to').value = saved.to;
+      $('f-wake').value = saved.wake; $('f-bed').value = saved.bed; $('f-days').value = saved.days;
+      build();
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
